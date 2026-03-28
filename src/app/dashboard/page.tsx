@@ -1,5 +1,9 @@
+import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import BoxFilter from '@/components/BoxFilter'
+import CardList from '@/components/CardList'
+import { Suspense } from 'react'
 
 async function signOut() {
   'use server'
@@ -8,13 +12,31 @@ async function signOut() {
   redirect('/login')
 }
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ box?: string }>
+}) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
     redirect('/login')
   }
+
+  const { box } = await searchParams
+  const boxFilter = box ? parseInt(box) : null
+
+  let query = supabase
+    .from('cards')
+    .select('*')
+    .order('created_at', { ascending: false })
+
+  if (boxFilter && boxFilter >= 1 && boxFilter <= 5) {
+    query = query.eq('box_number', boxFilter)
+  }
+
+  const { data: cards } = await query
 
   return (
     <div className="min-h-screen bg-zinc-50">
@@ -35,8 +57,22 @@ export default async function DashboardPage() {
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-6 py-16 text-center">
-        <p className="text-zinc-400 text-sm">대시보드 — Phase 3에서 구현 예정</p>
+      <main className="max-w-4xl mx-auto px-6 py-8">
+        <div className="flex items-center justify-between gap-4 mb-6">
+          <Suspense>
+            <BoxFilter />
+          </Suspense>
+          <Link
+            href="/dashboard/cards/new"
+            className="px-4 py-2 bg-zinc-900 text-white text-sm font-medium rounded-md hover:bg-zinc-800 transition-colors shrink-0"
+          >
+            + 새 카드
+          </Link>
+        </div>
+
+        <div className="bg-white rounded-lg border border-zinc-200 px-6">
+          <CardList cards={cards ?? []} />
+        </div>
       </main>
     </div>
   )
