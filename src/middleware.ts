@@ -28,7 +28,9 @@ export async function middleware(request: NextRequest) {
   // 세션 갱신 (중요: getUser()를 반드시 호출해야 함)
   const { data: { user } } = await supabase.auth.getUser()
 
-  const isAuthPage = request.nextUrl.pathname.startsWith('/login')
+  const isAuthPage =
+    request.nextUrl.pathname.startsWith('/login') ||
+    request.nextUrl.pathname.startsWith('/auth')
 
   // 비로그인 상태에서 보호된 라우트 접근 시 로그인 페이지로 리다이렉트
   if (!user && !isAuthPage) {
