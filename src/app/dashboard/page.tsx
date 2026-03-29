@@ -62,12 +62,20 @@ export default async function DashboardPage({
           <Suspense>
             <BoxFilter />
           </Suspense>
-          <Link
-            href="/dashboard/cards/new"
-            className="px-4 py-2 bg-zinc-900 text-white text-sm font-medium rounded-md hover:bg-zinc-800 transition-colors shrink-0"
-          >
-            + 새 카드
-          </Link>
+          <div className="flex gap-2 shrink-0">
+            <Link
+              href="/dashboard/review"
+              className="px-4 py-2 bg-white border border-zinc-200 text-zinc-700 text-sm font-medium rounded-md hover:bg-zinc-50 transition-colors"
+            >
+              복습 시작
+            </Link>
+            <Link
+              href="/dashboard/cards/new"
+              className="px-4 py-2 bg-zinc-900 text-white text-sm font-medium rounded-md hover:bg-zinc-800 transition-colors"
+            >
+              + 새 카드
+            </Link>
+          </div>
         </div>
 
         <div className="bg-white rounded-lg border border-zinc-200 px-6">

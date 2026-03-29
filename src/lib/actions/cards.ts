@@ -53,6 +53,44 @@ export async function updateCard(id: string, formData: FormData) {
   redirect('/dashboard')
 }
 
+export async function submitReview(
+  cardId: string,
+  wasCorrect: boolean,
+  currentBox: number
+): Promise<ActionResult> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { success: false, error: '인증이 필요합니다.' }
+
+  const graduated = wasCorrect && currentBox === 5
+  const boxAfter = wasCorrect
+    ? (currentBox === 5 ? 5 : currentBox + 1)
+    : 1
+
+  const { error: cardError } = await supabase
+    .from('cards')
+    .update({ box_number: boxAfter, graduated, updated_at: new Date().toISOString() })
+    .eq('id', cardId)
+    .eq('user_id', user.id)
+
+  if (cardError) return { success: false, error: cardError.message }
+
+  const { error: eventError } = await supabase
+    .from('review_events')
+    .insert({
+      user_id: user.id,
+      card_id: cardId,
+      box_before: currentBox,
+      box_after: boxAfter,
+      was_correct: wasCorrect,
+    })
+
+  if (eventError) return { success: false, error: eventError.message }
+
+  revalidatePath('/dashboard')
+  return { success: true }
+}
+
 export async function deleteCard(id: string): Promise<ActionResult> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
