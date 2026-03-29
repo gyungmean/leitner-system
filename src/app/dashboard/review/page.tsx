@@ -8,13 +8,13 @@ const BOX_CAPACITY = 20
 export default async function ReviewPage({
   searchParams,
 }: {
-  searchParams: Promise<{ box?: string; idx?: string }>
+  searchParams: Promise<{ box?: string; idx?: string; correct?: string; wrong?: string }>
 }) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const { box, idx } = await searchParams
+  const { box, idx, correct, wrong } = await searchParams
 
   // 박스 결정: box 파라미터 없으면 복습 대상 박스 계산
   if (!box) {
@@ -39,11 +39,13 @@ export default async function ReviewPage({
     const targetBox =
       [5, 4, 3, 2].find((n) => counts[n] >= BOX_CAPACITY) ?? 1
 
-    redirect(`/dashboard/review?box=${targetBox}&idx=0`)
+    redirect(`/dashboard/review?box=${targetBox}&idx=0&correct=0&wrong=0`)
   }
 
   const boxNumber = parseInt(box)
   const currentIdx = parseInt(idx ?? '0')
+  const correctCount = parseInt(correct ?? '0')
+  const wrongCount = parseInt(wrong ?? '0')
 
   // 해당 박스 카드 목록 조회
   const { data: cards } = await supabase
@@ -58,7 +60,7 @@ export default async function ReviewPage({
 
   // 모든 카드 복습 완료
   if (currentIdx >= cardList.length) {
-    redirect(`/dashboard/review/complete?box=${boxNumber}`)
+    redirect(`/dashboard/review/complete?box=${boxNumber}&correct=${correctCount}&wrong=${wrongCount}`)
   }
 
   // 복습할 카드가 없는 경우 (박스가 비어있음)
@@ -102,6 +104,8 @@ export default async function ReviewPage({
           currentIndex={currentIdx}
           totalCount={cardList.length}
           boxNumber={boxNumber}
+          correct={correctCount}
+          wrong={wrongCount}
         />
       </main>
     </div>

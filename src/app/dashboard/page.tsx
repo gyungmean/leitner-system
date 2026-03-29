@@ -27,6 +27,25 @@ export default async function DashboardPage({
   const { box } = await searchParams
   const boxFilter = box ?? null
 
+  // 박스별 카드 수 통계
+  const [b1, b2, b3, b4, b5, graduated] = await Promise.all([
+    supabase.from('cards').select('id', { count: 'exact', head: true }).eq('user_id', user.id).eq('box_number', 1).eq('graduated', false),
+    supabase.from('cards').select('id', { count: 'exact', head: true }).eq('user_id', user.id).eq('box_number', 2).eq('graduated', false),
+    supabase.from('cards').select('id', { count: 'exact', head: true }).eq('user_id', user.id).eq('box_number', 3).eq('graduated', false),
+    supabase.from('cards').select('id', { count: 'exact', head: true }).eq('user_id', user.id).eq('box_number', 4).eq('graduated', false),
+    supabase.from('cards').select('id', { count: 'exact', head: true }).eq('user_id', user.id).eq('box_number', 5).eq('graduated', false),
+    supabase.from('cards').select('id', { count: 'exact', head: true }).eq('user_id', user.id).eq('graduated', true),
+  ])
+
+  const boxCounts = [
+    { label: 'Box 1', count: b1.count ?? 0 },
+    { label: 'Box 2', count: b2.count ?? 0 },
+    { label: 'Box 3', count: b3.count ?? 0 },
+    { label: 'Box 4', count: b4.count ?? 0 },
+    { label: 'Box 5', count: b5.count ?? 0 },
+    { label: '졸업', count: graduated.count ?? 0 },
+  ]
+
   let query = supabase
     .from('cards')
     .select('*')
@@ -63,6 +82,16 @@ export default async function DashboardPage({
       </header>
 
       <main className="max-w-4xl mx-auto px-6 py-8">
+        {/* 박스별 통계 */}
+        <div className="grid grid-cols-6 gap-2 mb-6">
+          {boxCounts.map(({ label, count }) => (
+            <div key={label} className="bg-white border border-zinc-200 rounded-lg px-3 py-3 text-center">
+              <p className="text-xl font-bold text-zinc-900">{count}</p>
+              <p className="text-xs text-zinc-500 mt-0.5">{label}</p>
+            </div>
+          ))}
+        </div>
+
         <div className="flex items-center justify-between gap-4 mb-6">
           <Suspense>
             <BoxFilter />

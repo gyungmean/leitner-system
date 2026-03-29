@@ -10,24 +10,44 @@ interface ReviewCardProps {
   currentIndex: number
   totalCount: number
   boxNumber: number
+  correct: number
+  wrong: number
 }
 
-export default function ReviewCard({ card, currentIndex, totalCount, boxNumber }: ReviewCardProps) {
+export default function ReviewCard({ card, currentIndex, totalCount, boxNumber, correct, wrong }: ReviewCardProps) {
   const router = useRouter()
   const [isFlipped, setIsFlipped] = useState(false)
   const [isPending, setIsPending] = useState(false)
 
+  const progress = Math.round((currentIndex / totalCount) * 100)
+
   async function handleAnswer(wasCorrect: boolean) {
     setIsPending(true)
     await submitReview(card.id, wasCorrect, boxNumber)
-    router.push(`/dashboard/review?box=${boxNumber}&idx=${currentIndex + 1}`)
+    const nextCorrect = wasCorrect ? correct + 1 : correct
+    const nextWrong = wasCorrect ? wrong : wrong + 1
+    const nextIdx = currentIndex + 1
+    if (nextIdx >= totalCount) {
+      router.push(`/dashboard/review/complete?box=${boxNumber}&correct=${nextCorrect}&wrong=${nextWrong}`)
+    } else {
+      router.push(`/dashboard/review?box=${boxNumber}&idx=${nextIdx}&correct=${nextCorrect}&wrong=${nextWrong}`)
+    }
   }
 
   return (
     <div className="flex flex-col items-center gap-6">
-      <p className="text-sm text-zinc-500">
-        {currentIndex + 1} / {totalCount}
-      </p>
+      <div className="w-full max-w-lg">
+        <div className="flex justify-between text-xs text-zinc-400 mb-1.5">
+          <span>{currentIndex + 1} / {totalCount}</span>
+          <span>{progress}%</span>
+        </div>
+        <div className="w-full h-1.5 bg-zinc-200 rounded-full overflow-hidden">
+          <div
+            className="h-full bg-zinc-900 rounded-full transition-all duration-300"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+      </div>
 
       <div className="w-full max-w-lg bg-white border border-zinc-200 rounded-xl p-10 min-h-48 flex items-center justify-center">
         <p className="text-xl text-zinc-900 text-center whitespace-pre-wrap">
