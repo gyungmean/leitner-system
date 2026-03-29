@@ -25,15 +25,20 @@ export default async function DashboardPage({
   }
 
   const { box } = await searchParams
-  const boxFilter = box ? parseInt(box) : null
+  const boxFilter = box ?? null
 
   let query = supabase
     .from('cards')
     .select('*')
     .order('created_at', { ascending: false })
 
-  if (boxFilter && boxFilter >= 1 && boxFilter <= 5) {
-    query = query.eq('box_number', boxFilter)
+  if (boxFilter === 'graduated') {
+    query = query.eq('graduated', true)
+  } else if (boxFilter && ['1','2','3','4','5'].includes(boxFilter)) {
+    query = query.eq('box_number', parseInt(boxFilter)).eq('graduated', false)
+  } else {
+    // 전체: 졸업 카드 제외
+    query = query.eq('graduated', false)
   }
 
   const { data: cards } = await query

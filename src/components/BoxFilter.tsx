@@ -9,6 +9,7 @@ const tabs = [
   { label: 'Box 3', value: '3' },
   { label: 'Box 4', value: '4' },
   { label: 'Box 5', value: '5' },
+  { label: '졸업', value: 'graduated' },
 ]
 
 export default function BoxFilter() {

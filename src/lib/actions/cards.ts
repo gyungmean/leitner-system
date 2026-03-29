@@ -91,6 +91,23 @@ export async function submitReview(
   return { success: true }
 }
 
+export async function resetCard(id: string): Promise<ActionResult> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { success: false, error: '인증이 필요합니다.' }
+
+  const { error } = await supabase
+    .from('cards')
+    .update({ box_number: 1, graduated: false, updated_at: new Date().toISOString() })
+    .eq('id', id)
+    .eq('user_id', user.id)
+
+  if (error) return { success: false, error: error.message }
+
+  revalidatePath('/dashboard')
+  return { success: true }
+}
+
 export async function deleteCard(id: string): Promise<ActionResult> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()

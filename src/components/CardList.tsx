@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { deleteCard } from '@/lib/actions/cards'
+import { deleteCard, resetCard } from '@/lib/actions/cards'
 import type { Card } from '@/types/card'
 
 export default function CardList({ cards }: { cards: Card[] }) {
@@ -16,6 +16,11 @@ export default function CardList({ cards }: { cards: Card[] }) {
   async function handleDelete(id: string) {
     if (!confirm('이 카드를 삭제하시겠습니까?')) return
     await deleteCard(id)
+  }
+
+  async function handleReset(id: string) {
+    if (!confirm('Box 1로 되돌려 다시 학습하시겠습니까?')) return
+    await resetCard(id)
   }
 
   return (
@@ -54,6 +59,14 @@ export default function CardList({ cards }: { cards: Card[] }) {
             )}
           </div>
           <div className="flex items-center gap-2 shrink-0">
+            {card.graduated && (
+              <button
+                onClick={() => handleReset(card.id)}
+                className="text-sm text-blue-500 hover:text-blue-700 transition-colors"
+              >
+                다시 학습
+              </button>
+            )}
             <Link
               href={`/dashboard/cards/${card.id}/edit`}
               className="text-sm text-zinc-500 hover:text-zinc-900 transition-colors"
