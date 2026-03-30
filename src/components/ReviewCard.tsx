@@ -6,31 +6,38 @@ import { submitReview } from '@/lib/actions/cards'
 import type { Card } from '@/types/card'
 
 interface ReviewCardProps {
-  card: Card
-  currentIndex: number
-  totalCount: number
+  cards: Card[]
   boxNumber: number
-  correct: number
-  wrong: number
 }
 
-export default function ReviewCard({ card, currentIndex, totalCount, boxNumber, correct, wrong }: ReviewCardProps) {
+export default function ReviewCard({ cards, boxNumber }: ReviewCardProps) {
   const router = useRouter()
+  const [currentIndex, setCurrentIndex] = useState(0)
+  const [correctCount, setCorrectCount] = useState(0)
+  const [wrongCount, setWrongCount] = useState(0)
   const [isFlipped, setIsFlipped] = useState(false)
   const [isPending, setIsPending] = useState(false)
 
+  const totalCount = cards.length
   const progress = Math.round((currentIndex / totalCount) * 100)
+  const card = cards[currentIndex]
 
   async function handleAnswer(wasCorrect: boolean) {
     setIsPending(true)
-    await submitReview(card.id, wasCorrect, boxNumber)
-    const nextCorrect = wasCorrect ? correct + 1 : correct
-    const nextWrong = wasCorrect ? wrong : wrong + 1
-    const nextIdx = currentIndex + 1
-    if (nextIdx >= totalCount) {
+    const isLastCard = currentIndex + 1 >= totalCount
+    await submitReview(card.id, wasCorrect, boxNumber, isLastCard)
+
+    const nextCorrect = wasCorrect ? correctCount + 1 : correctCount
+    const nextWrong = wasCorrect ? wrongCount : wrongCount + 1
+
+    if (currentIndex + 1 >= totalCount) {
       router.push(`/dashboard/review/complete?box=${boxNumber}&correct=${nextCorrect}&wrong=${nextWrong}`)
     } else {
-      router.push(`/dashboard/review?box=${boxNumber}&idx=${nextIdx}&correct=${nextCorrect}&wrong=${nextWrong}`)
+      setCorrectCount(nextCorrect)
+      setWrongCount(nextWrong)
+      setCurrentIndex(currentIndex + 1)
+      setIsFlipped(false)
+      setIsPending(false)
     }
   }
 

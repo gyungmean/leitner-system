@@ -27,23 +27,17 @@ export default async function DashboardPage({
   const { box } = await searchParams
   const boxFilter = box ?? null
 
-  // 박스별 카드 수 통계
-  const [b1, b2, b3, b4, b5, graduated] = await Promise.all([
-    supabase.from('cards').select('id', { count: 'exact', head: true }).eq('user_id', user.id).eq('box_number', 1).eq('graduated', false),
-    supabase.from('cards').select('id', { count: 'exact', head: true }).eq('user_id', user.id).eq('box_number', 2).eq('graduated', false),
-    supabase.from('cards').select('id', { count: 'exact', head: true }).eq('user_id', user.id).eq('box_number', 3).eq('graduated', false),
-    supabase.from('cards').select('id', { count: 'exact', head: true }).eq('user_id', user.id).eq('box_number', 4).eq('graduated', false),
-    supabase.from('cards').select('id', { count: 'exact', head: true }).eq('user_id', user.id).eq('box_number', 5).eq('graduated', false),
-    supabase.from('cards').select('id', { count: 'exact', head: true }).eq('user_id', user.id).eq('graduated', true),
-  ])
+  // 박스별 카드 수 통계 (RPC 1회 호출)
+  const { data: counts } = await supabase.rpc('get_box_counts', { p_user_id: user.id })
 
+  const countMap = new Map<number, number>((counts as { box_number: number; count: number }[] ?? []).map((r) => [r.box_number, Number(r.count)]))
   const boxCounts = [
-    { label: 'Box 1', count: b1.count ?? 0 },
-    { label: 'Box 2', count: b2.count ?? 0 },
-    { label: 'Box 3', count: b3.count ?? 0 },
-    { label: 'Box 4', count: b4.count ?? 0 },
-    { label: 'Box 5', count: b5.count ?? 0 },
-    { label: '졸업', count: graduated.count ?? 0 },
+    { label: 'Box 1', count: countMap.get(1) ?? 0 },
+    { label: 'Box 2', count: countMap.get(2) ?? 0 },
+    { label: 'Box 3', count: countMap.get(3) ?? 0 },
+    { label: 'Box 4', count: countMap.get(4) ?? 0 },
+    { label: 'Box 5', count: countMap.get(5) ?? 0 },
+    { label: '졸업', count: countMap.get(0) ?? 0 },
   ]
 
   let query = supabase

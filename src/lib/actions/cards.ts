@@ -56,7 +56,8 @@ export async function updateCard(id: string, formData: FormData) {
 export async function submitReview(
   cardId: string,
   wasCorrect: boolean,
-  currentBox: number
+  currentBox: number,
+  isLastCard: boolean = false
 ): Promise<ActionResult> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -87,7 +88,10 @@ export async function submitReview(
 
   if (eventError) return { success: false, error: eventError.message }
 
-  revalidatePath('/dashboard')
+  if (isLastCard) {
+    revalidatePath('/dashboard')
+  }
+
   return { success: true }
 }
 
