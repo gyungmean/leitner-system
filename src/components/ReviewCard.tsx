@@ -25,14 +25,14 @@ export default function ReviewCard({ cards, boxNumber }: ReviewCardProps) {
   async function handleAnswer(wasCorrect: boolean) {
     setIsPending(true)
     const isLastCard = currentIndex + 1 >= totalCount
-    await submitReview(card.id, wasCorrect, boxNumber, isLastCard)
-
     const nextCorrect = wasCorrect ? correctCount + 1 : correctCount
     const nextWrong = wasCorrect ? wrongCount : wrongCount + 1
 
-    if (currentIndex + 1 >= totalCount) {
+    if (isLastCard) {
+      await submitReview(card.id, wasCorrect, boxNumber, true)
       router.push(`/dashboard/review/complete?box=${boxNumber}&correct=${nextCorrect}&wrong=${nextWrong}`)
     } else {
+      submitReview(card.id, wasCorrect, boxNumber, false)
       setCorrectCount(nextCorrect)
       setWrongCount(nextWrong)
       setCurrentIndex(currentIndex + 1)
