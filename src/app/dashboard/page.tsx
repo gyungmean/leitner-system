@@ -76,14 +76,33 @@ export default async function DashboardPage({
       </header>
 
       <main className="max-w-4xl mx-auto px-6 py-8">
-        {/* 박스별 통계 */}
+        {/* 박스별 통계 - 클릭 시 해당 박스 복습 시작 */}
         <div className="grid grid-cols-6 gap-2 mb-6">
-          {boxCounts.map(({ label, count }) => (
-            <div key={label} className="bg-white border border-zinc-200 rounded-lg px-3 py-3 text-center">
-              <p className="text-xl font-bold text-zinc-900">{count}</p>
-              <p className="text-xs text-zinc-500 mt-0.5">{label}</p>
-            </div>
-          ))}
+          {boxCounts.map(({ label, count }, idx) => {
+            const boxNum = idx + 1
+            const isGraduated = label === '졸업'
+            const disabled = isGraduated || count === 0
+            const baseCls = 'border border-zinc-200 rounded-lg px-3 py-3 text-center block transition-colors'
+            if (disabled) {
+              return (
+                <div key={label} className={`${baseCls} bg-white opacity-50`}>
+                  <p className="text-xl font-bold text-zinc-900">{count}</p>
+                  <p className="text-xs text-zinc-500 mt-0.5">{label}</p>
+                </div>
+              )
+            }
+            return (
+              <Link
+                key={label}
+                href={`/dashboard/review?box=${boxNum}`}
+                className={`${baseCls} bg-white hover:bg-zinc-50 hover:border-zinc-300`}
+                title={`${label} 복습 시작`}
+              >
+                <p className="text-xl font-bold text-zinc-900">{count}</p>
+                <p className="text-xs text-zinc-500 mt-0.5">{label}</p>
+              </Link>
+            )
+          })}
         </div>
 
         <div className="flex items-center justify-between gap-4 mb-6">
