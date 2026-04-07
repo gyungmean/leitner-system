@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { submitReview } from '@/lib/actions/cards'
+import { submitReviewBatch } from '@/lib/actions/cards'
 import type { Card } from '@/types/card'
 
 interface ReviewCardProps {
@@ -17,27 +17,28 @@ export default function ReviewCard({ cards, boxNumber }: ReviewCardProps) {
   const [wrongCount, setWrongCount] = useState(0)
   const [isFlipped, setIsFlipped] = useState(false)
   const [isPending, setIsPending] = useState(false)
+  const [answers, setAnswers] = useState<{ cardId: string; wasCorrect: boolean }[]>([])
 
   const totalCount = cards.length
   const progress = Math.round((currentIndex / totalCount) * 100)
   const card = cards[currentIndex]
 
   async function handleAnswer(wasCorrect: boolean) {
-    setIsPending(true)
     const isLastCard = currentIndex + 1 >= totalCount
     const nextCorrect = wasCorrect ? correctCount + 1 : correctCount
     const nextWrong = wasCorrect ? wrongCount : wrongCount + 1
+    const nextAnswers = [...answers, { cardId: card.id, wasCorrect }]
 
     if (isLastCard) {
-      await submitReview(card.id, wasCorrect, boxNumber, true)
+      setIsPending(true)
+      await submitReviewBatch(nextAnswers, boxNumber)
       router.push(`/dashboard/review/complete?box=${boxNumber}&correct=${nextCorrect}&wrong=${nextWrong}`)
     } else {
-      submitReview(card.id, wasCorrect, boxNumber, false)
+      setAnswers(nextAnswers)
       setCorrectCount(nextCorrect)
       setWrongCount(nextWrong)
       setCurrentIndex(currentIndex + 1)
       setIsFlipped(false)
-      setIsPending(false)
     }
   }
 

@@ -59,39 +59,76 @@ export async function submitReview(
   currentBox: number,
   isLastCard: boolean = false
 ): Promise<ActionResult> {
+  return submitReviewBatch([{ cardId, wasCorrect }], currentBox)
+}
+
+export async function submitReviewBatch(
+  answers: { cardId: string; wasCorrect: boolean }[],
+  currentBox: number,
+): Promise<ActionResult> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { success: false, error: '인증이 필요합니다.' }
 
-  const graduated = wasCorrect && currentBox === 5
-  const boxAfter = wasCorrect
-    ? (currentBox === 5 ? 5 : currentBox + 1)
-    : 1
+  const now = new Date().toISOString()
 
-  const { error: cardError } = await supabase
-    .from('cards')
-    .update({ box_number: boxAfter, graduated, updated_at: new Date().toISOString() })
-    .eq('id', cardId)
-    .eq('user_id', user.id)
+  const cardUpdates = answers.map(({ cardId, wasCorrect }) => {
+    const graduated = wasCorrect && currentBox === 5
+    const boxAfter = wasCorrect
+      ? (currentBox === 5 ? 5 : currentBox + 1)
+      : 1
+    return { cardId, boxAfter, graduated, wasCorrect }
+  })
 
-  if (cardError) return { success: false, error: cardError.message }
+  // 카드 업데이트: 정답/오답 그룹별로 배치
+  const correctIds = cardUpdates.filter(u => u.wasCorrect).map(u => u.cardId)
+  const wrongIds = cardUpdates.filter(u => !u.wasCorrect).map(u => u.cardId)
 
-  const { error: eventError } = await supabase
-    .from('review_events')
-    .insert({
-      user_id: user.id,
-      card_id: cardId,
-      box_before: currentBox,
-      box_after: boxAfter,
-      was_correct: wasCorrect,
-    })
+  const correctBoxAfter = currentBox === 5 ? 5 : currentBox + 1
+  const correctGraduated = currentBox === 5
 
-  if (eventError) return { success: false, error: eventError.message }
+  const promises: PromiseLike<unknown>[] = []
 
-  if (isLastCard) {
-    revalidatePath('/dashboard')
+  if (correctIds.length > 0) {
+    promises.push(
+      supabase
+        .from('cards')
+        .update({ box_number: correctBoxAfter, graduated: correctGraduated, updated_at: now })
+        .in('id', correctIds)
+        .eq('user_id', user.id)
+        .then()
+    )
   }
 
+  if (wrongIds.length > 0) {
+    promises.push(
+      supabase
+        .from('cards')
+        .update({ box_number: 1, graduated: false, updated_at: now })
+        .in('id', wrongIds)
+        .eq('user_id', user.id)
+        .then()
+    )
+  }
+
+  // 리뷰 이벤트 일괄 삽입
+  const events = cardUpdates.map(({ cardId, boxAfter, wasCorrect }) => ({
+    user_id: user.id,
+    card_id: cardId,
+    box_before: currentBox,
+    box_after: boxAfter,
+    was_correct: wasCorrect,
+  }))
+
+  promises.push(
+    supabase.from('review_events').insert(events).then()
+  )
+
+  const results = await Promise.all(promises)
+  const error = results.find((r: any) => r.error)
+  if (error) return { success: false, error: (error as any).error.message }
+
+  revalidatePath('/dashboard')
   return { success: true }
 }
 
